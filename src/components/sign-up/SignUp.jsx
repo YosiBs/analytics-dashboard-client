@@ -121,21 +121,6 @@ export default function SignUp(props) {
     });
     postDeveloper(data);
   };
-  /* sssssssssssssssssss */
-  // const myData = {
-  //   email: "Dashboard@gmail.com",
-  //   name: "yosi from Dashboard",
-  //   apiKey: "MyApiKey",
-  // };
-  // const onSignUpAttempt = async () => {
-  //   try {
-  //     const response = await userService.createUser(myData);
-  //     console.log(`Response: `);
-  //     console.log(response);
-  //   } catch (error) {
-  //     console.error("Error during sign-up attempt:", error);
-  //   }
-  // };
 
   const postDeveloper = async (devData) => {
     const response = await userService.createUser(devData);
