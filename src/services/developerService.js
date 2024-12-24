@@ -1,6 +1,6 @@
 import axios from "axios";
 
-/*POST New User*/
+/*POST New Developer*/
 export const createUser = async (data) => {
   console.log(`Current Data~~`);
   console.log(data);
@@ -16,6 +16,36 @@ export const createUser = async (data) => {
     });
 
     console.log("Developer created successfully:", response.data);
+  } catch (error) {
+    if (error.response) {
+      // Server responded with a status code outside 2xx range
+      console.error("Error response:", error.response.data);
+    } else if (error.request) {
+      // No response received
+      console.error("Error request:", error.request);
+    } else {
+      // Axios setup issue
+      console.error("Error message:", error.message);
+    }
+  }
+};
+
+/*Authenticate Developer*/
+export const authenticateDeveloper = async (data) => {
+  console.log(`Current Data~~`);
+  console.log(data);
+
+  const url = "http://localhost:5000/api/developers/login/";
+
+  try {
+    const response = await axios.post(url, data, {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
+
+    console.log("Developer login successfully:", response.data);
   } catch (error) {
     if (error.response) {
       // Server responded with a status code outside 2xx range
