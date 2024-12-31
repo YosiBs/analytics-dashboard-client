@@ -16,6 +16,9 @@ import {
   treeViewCustomizations,
 } from "./theme/customizations";
 
+import * as localStorageHelper from "../../utils/localStorageHelper";
+import * as developerService from "../../services/developerService";
+
 const xThemeComponents = {
   ...chartsCustomizations,
   ...dataGridCustomizations,
@@ -24,11 +27,27 @@ const xThemeComponents = {
 };
 
 export default function Dashboard(props) {
+  const [currentUser, setCurrentUser] = React.useState(null);
+
+  //----------------------
+  // Function to get the current user
+  const getCurrentUser = React.useCallback(() => {
+    const temp = localStorageHelper.getUserFromLocalStorage();
+    setCurrentUser(temp);
+    console.log("Current user retrieved:", temp);
+  }, []);
+
+  // Use useEffect to call getCurrentUser only once when the component mounts
+  React.useEffect(() => {
+    getCurrentUser();
+  }, [getCurrentUser]);
+
   return (
     <AppTheme {...props} themeComponents={xThemeComponents}>
       <CssBaseline enableColorScheme />
       <Box sx={{ display: "flex" }}>
         <SideMenu />
+        <h6>{currentUser ? `Hi ${currentUser.email}` : "Loading..."}</h6>
         <AppNavbar />
         {/* Main content */}
         <Box

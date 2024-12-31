@@ -18,8 +18,9 @@ import { GoogleIcon, FacebookIcon, SitemarkIcon } from "./CustomIcons";
 import AppTheme from "../shared-theme/AppTheme";
 import ColorModeSelect from "../shared-theme/ColorModeSelect";
 
+import * as localStorageHelper from "../../utils/localStorageHelper";
 import * as developerService from "../../services/developerService";
-import { Navigate } from "react-router-dom";
+
 const Card = styled(MuiCard)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
@@ -82,6 +83,7 @@ export default function SignIn(props) {
       event.preventDefault();
       return;
     }
+
     const data = new FormData(event.currentTarget);
     console.log({
       email: data.get("email"),
@@ -90,12 +92,22 @@ export default function SignIn(props) {
 
     loginAttempt(data);
   };
+
   const loginAttempt = async (devData) => {
-    const response = await developerService.authenticateDeveloper(devData);
-    console.log(`Response: `);
-    console.log(response);
-    navigate("/Dashboard");
+    try {
+      const response = await developerService.authenticateDeveloper(devData);
+      console.log(`Response from post request: `);
+      console.log(response);
+      localStorageHelper.saveUserToLocalStorage(response.data.developer);
+      console.log(`user saved to Local Storage`);
+
+      window.location.href = "http://localhost:5173/dashboard";
+    } catch (error) {
+      console.error("Error during login attempt:", error);
+      alert("An error occurred during login. Please try again.");
+    }
   };
+
   const validateInputs = () => {
     const email = document.getElementById("email");
     const password = document.getElementById("password");

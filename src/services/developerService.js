@@ -46,6 +46,7 @@ export const authenticateDeveloper = async (data) => {
     });
 
     console.log("Developer login successfully:", response.data);
+    return response;
   } catch (error) {
     if (error.response) {
       // Server responded with a status code outside 2xx range
