@@ -18,3 +18,24 @@ export const getUserFromLocalStorage = () => {
   }
   return null; // Return null if no user is found
 };
+
+export const saveAppIdLocalStorage = (currApp) => {
+  console.log(`in saveAppIdLocalStorage`);
+  console.log(currApp);
+  localStorage.setItem("currApp", JSON.stringify(currApp)); // Save user data to localStorage
+};
+export const getAppIdFromLocalStorage = () => {
+  console.log(`in getAppIdFromLocalStorage`);
+  const currApp = localStorage.getItem("currApp"); // Get user data from localStorage
+  if (currApp) {
+    try {
+      const appId = JSON.parse(currApp); // Convert JSON string to object
+      console.log(appId);
+      return appId;
+    } catch (error) {
+      console.error("Error parsing appId data:", error);
+      return null; // Return null if parsing fails
+    }
+  }
+  return null; // Return null if no user is found
+};

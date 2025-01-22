@@ -28,7 +28,7 @@ const xThemeComponents = {
 
 export default function Dashboard(props) {
   const [currentUser, setCurrentUser] = React.useState(null);
-
+  const [currAppId, setCurrAppId] = React.useState("");
   //----------------------
   // Function to get the current user
   const getCurrentUser = React.useCallback(() => {
@@ -46,8 +46,7 @@ export default function Dashboard(props) {
     <AppTheme {...props} themeComponents={xThemeComponents}>
       <CssBaseline enableColorScheme />
       <Box sx={{ display: "flex" }}>
-        <SideMenu />
-        <h6>{currentUser ? `Hi ${currentUser.email}` : "Loading..."}</h6>
+        <SideMenu setCurrAppId={setCurrAppId} />
         <AppNavbar />
         {/* Main content */}
         <Box
@@ -70,7 +69,7 @@ export default function Dashboard(props) {
             }}
           >
             <Header />
-            <MainGrid />
+            <MainGrid currAppId={currAppId} />
           </Stack>
         </Box>
       </Box>
