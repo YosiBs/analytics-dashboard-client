@@ -213,7 +213,7 @@ export default function SelectContent({ setCurrAppId }) {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Add New Product</DialogTitle>
+        <DialogTitle>Add New Application</DialogTitle>
         <DialogContent>
           <Box
             // component="form"
@@ -272,7 +272,7 @@ export default function SelectContent({ setCurrAppId }) {
             color="primary"
             type="submit"
           >
-            Add Product
+            Add Application
           </Button>
         </DialogActions>
       </Dialog>

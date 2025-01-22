@@ -17,7 +17,8 @@ import * as localStorageHelper from "../../../utils/localStorageHelper";
 
 export default function MainGrid({ currAppId }) {
   const [data, setData] = React.useState([]);
-
+  const [logs, setLogs] = React.useState([]);
+  const [dailyLoginlogs, setDailyLogin] = React.useState([]);
   const fetchData = React.useCallback(async () => {
     if (!currAppId) return;
     try {
@@ -29,11 +30,9 @@ export default function MainGrid({ currAppId }) {
         currAppId,
         "Crash"
       );
-      //const events = await usersService.getEventsByAppId(appId); // Example endpoint
 
       console.log("Users fetched:", users);
       console.log("Crashes fetched:", crashes);
-      //console.log("Events fetched:", events);
 
       // Create cards for each category
       const cards = [
@@ -57,13 +56,6 @@ export default function MainGrid({ currAppId }) {
               : "up",
           data: Helper.getLogsJoinedInLast30Days(crashes) || [], // Replace with actual crash data
         },
-        // {
-        //   title: "Events",
-        //   value: events.total || 0,
-        //   interval: "Last 30 days",
-        //   trend: events.trend || "up",
-        //   data: events.dailyCounts || [], // Replace with actual event data
-        // },
       ];
 
       setData(cards); // Update the `data` state with the cards
@@ -76,6 +68,37 @@ export default function MainGrid({ currAppId }) {
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  React.useEffect(() => {
+    if (!currAppId) return;
+
+    const fetchLogs = async () => {
+      try {
+        const fetchedLogs = await usersService.getAllLogsByAppId(currAppId);
+        console.log("Fetched logs:", fetchedLogs);
+        setLogs(fetchedLogs); // Update logs state
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      }
+    };
+
+    fetchLogs();
+  }, [currAppId]);
+
+  React.useEffect(() => {
+    const fetchDailyLoginLogs = async () => {
+      try {
+        const fetchedLogs = await usersService.getLogsByAppIdAndType(
+          currAppId,
+          "DailyLogin"
+        );
+        setDailyLogin(fetchedLogs);
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      }
+    };
+    fetchDailyLoginLogs();
+  }, [currAppId]);
 
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
@@ -95,22 +118,25 @@ export default function MainGrid({ currAppId }) {
           </Grid>
         ))}
         <Grid size={{ xs: 12, md: 6 }}>
-          <SessionsChart />
+          {/* SESSION CHART */}
+          <SessionsChart dailyLoginlogs={dailyLoginlogs} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
           <PageViewsBarChart />
         </Grid>
       </Grid>
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>
-        Details
+        Logs
       </Typography>
       <Grid container spacing={2} columns={12}>
         <Grid size={{ xs: 12, lg: 9 }}>
-          <CustomizedDataGrid />
+          {/* LOG TABLE */}
+          <CustomizedDataGrid logs={logs} />
         </Grid>
         <Grid size={{ xs: 12, lg: 3 }}>
           <Stack gap={2} direction={{ xs: "column", sm: "row", lg: "column" }}>
             <CustomizedTreeView />
+            {/* COUNTRY DISTRIBUTION */}
             <ChartUserByCountry />
           </Stack>
         </Grid>

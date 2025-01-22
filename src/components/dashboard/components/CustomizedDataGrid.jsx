@@ -2,7 +2,15 @@ import * as React from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { columns, rows } from "../internals/data/gridData";
 
-export default function CustomizedDataGrid() {
+export default function CustomizedDataGrid({ logs }) {
+  const rows = logs.map((log) => ({
+    id: log.logid, // Use logid as id
+    logType: log.logtype, // Ensure property names match the column definitions
+    timestamp: new Date(log.timestamp).toLocaleString(), // Convert timestamp to readable format
+    userId: log.userid || "Unknown", // Use 'Unknown' if no userId
+    description: log.description,
+  }));
+
   return (
     <DataGrid
       autoHeight

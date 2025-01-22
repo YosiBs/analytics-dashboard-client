@@ -1,5 +1,5 @@
 import axios from "axios";
-
+//===========================================================================================
 export const getUsersJoinedInLast30Days = (users) => {
   const now = new Date(); // Get current date & time
   const today = new Date(
@@ -31,7 +31,7 @@ export const getUsersJoinedInLast30Days = (users) => {
 
   return last30Days; // Array of user counts per day for the last 30 days
 };
-
+//===========================================================================================
 export const getLast30Days = () => {
   const now = new Date(); // Get today's date
   const today = new Date(
@@ -54,7 +54,7 @@ export const getLast30Days = () => {
 
   return days;
 };
-
+//===========================================================================================
 export const getLogsJoinedInLast30Days = (logs) => {
   const now = new Date(); // Get current date & time
   const today = new Date(
@@ -86,7 +86,7 @@ export const getLogsJoinedInLast30Days = (logs) => {
 
   return last30Days; // Array of user counts per day for the last 30 days
 };
-
+//===========================================================================================
 export const calculateTrend = (data) => {
   if (!data || data.length < 2) {
     return "neutral"; // Default to neutral if there's not enough data
@@ -102,4 +102,44 @@ export const calculateTrend = (data) => {
   } else {
     return "neutral";
   }
+};
+//===========================================================================================
+export const getLast3MonthsDailyLogins = (logs) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Get start dates for each of the last 3 months
+  const month1Start = new Date(today);
+  month1Start.setMonth(today.getMonth() - 0, today.getDate());
+
+  const month2Start = new Date(today);
+  month2Start.setMonth(today.getMonth() - 1, today.getDate());
+
+  const month3Start = new Date(today);
+  month3Start.setMonth(today.getMonth() - 2, today.getDate());
+
+  // Initialize arrays for each month (31 days max)
+  const month1Data = Array(31).fill(0);
+  const month2Data = Array(31).fill(0);
+  const month3Data = Array(31).fill(0);
+  const days = Array.from({ length: 31 }, (_, i) => `${i + 1}`); // ["1", "2", ..., "31"]
+
+  logs.forEach((log) => {
+    if (log.logtype !== "DailyLogin") return;
+
+    const logDate = new Date(log.timestamp);
+    logDate.setHours(0, 0, 0, 0); // Normalize to the start of the day
+
+    const dayIndex = logDate.getDate() - 1; // Get day index (0-based)
+
+    if (logDate >= month1Start) {
+      month1Data[dayIndex]++;
+    } else if (logDate >= month2Start) {
+      month2Data[dayIndex]++;
+    } else if (logDate >= month3Start) {
+      month3Data[dayIndex]++;
+    }
+  });
+
+  return { month1Data, month2Data, month3Data, days };
 };
