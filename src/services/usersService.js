@@ -75,7 +75,23 @@ export const getAllLogsByAppId = async (appId) => {
     throw error;
   }
 };
+export const getUserCountPerCountryByAppId = async (appId) => {
+  console.log(`Fetching all logs for App ID: ${appId}`);
 
+  const url = `http://localhost:5000/api/geolocation/users-per-country?appId=${appId}`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: { Accept: "application/json" },
+    });
+
+    console.log("Logs fetched successfully:", response.data);
+    return response.data; // Return fetched logs
+  } catch (error) {
+    console.error("Error fetching logs:", error);
+    throw error;
+  }
+};
 export const getApplicationsByDeveloper = async () => {
   // Retrieve developer info from localStorage
   const developer = localStorageHelper.getUserFromLocalStorage();

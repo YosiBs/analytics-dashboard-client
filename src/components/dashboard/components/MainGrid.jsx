@@ -11,14 +11,19 @@ import HighlightedCard from "./HighlightedCard";
 import PageViewsBarChart from "./PageViewsBarChart";
 import SessionsChart from "./SessionsChart";
 import StatCard from "./StatCard";
+import StatCard2 from "./StatCard2";
 import * as usersService from "../../../services/usersService";
 import * as Helper from "../../../utils/Helper";
 import * as localStorageHelper from "../../../utils/localStorageHelper";
 
 export default function MainGrid({ currAppId }) {
   const [data, setData] = React.useState([]);
+  const [data2, setData2] = React.useState([]);
   const [logs, setLogs] = React.useState([]);
   const [dailyLoginlogs, setDailyLogin] = React.useState([]);
+  const [userGeoData, setUserGeoData] = React.useState([]);
+  const [inactiveDays, setInactiveDays] = React.useState(0);
+
   const fetchData = React.useCallback(async () => {
     if (!currAppId) return;
     try {
@@ -30,7 +35,7 @@ export default function MainGrid({ currAppId }) {
         currAppId,
         "Crash"
       );
-
+      const inactiveDays = 30;
       console.log("Users fetched:", users);
       console.log("Crashes fetched:", crashes);
 
@@ -47,7 +52,7 @@ export default function MainGrid({ currAppId }) {
         },
         {
           title: "Crashes",
-          value: String(crashes.length) || 0,
+          value: String(crashes.length) || -1,
           interval: "Last 30 days",
           trend:
             Helper.calculateTrend(Helper.getLogsJoinedInLast30Days(crashes)) ==
@@ -57,7 +62,16 @@ export default function MainGrid({ currAppId }) {
           data: Helper.getLogsJoinedInLast30Days(crashes) || [], // Replace with actual crash data
         },
       ];
-
+      const temp = Helper.countInactiveUsers(users, inactiveDays);
+      Helper.debugLog("temp", temp);
+      const cards2 = [
+        {
+          title: "Inactive Users",
+          value: temp || 0,
+          showDaysInput: true,
+        },
+      ];
+      setData2(cards2);
       setData(cards); // Update the `data` state with the cards
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -68,7 +82,7 @@ export default function MainGrid({ currAppId }) {
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
-
+  //GET ALL LOGS------------------------------------------------------------------
   React.useEffect(() => {
     if (!currAppId) return;
 
@@ -84,7 +98,7 @@ export default function MainGrid({ currAppId }) {
 
     fetchLogs();
   }, [currAppId]);
-
+  //GET DAILY-LOGIN------------------------------------------------------------------
   React.useEffect(() => {
     const fetchDailyLoginLogs = async () => {
       try {
@@ -99,7 +113,25 @@ export default function MainGrid({ currAppId }) {
     };
     fetchDailyLoginLogs();
   }, [currAppId]);
+  //GET COUNTRIES USERS COUNT------------------------------------------------------------------
+  React.useEffect(() => {
+    if (!currAppId) return;
 
+    const fetchCountriesData = async () => {
+      try {
+        const response = await usersService.getUserCountPerCountryByAppId(
+          currAppId
+        );
+        console.log("Fetched country data:", response);
+        setUserGeoData(response); // Update the state with the fetched data
+      } catch (error) {
+        console.error("Error fetching country data:", error);
+      }
+    };
+
+    fetchCountriesData();
+  }, [currAppId]);
+  //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
       {/* cards */}
@@ -115,6 +147,15 @@ export default function MainGrid({ currAppId }) {
         {data.map((card, index) => (
           <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
             <StatCard {...card} />
+          </Grid>
+        ))}
+        {data2.map((card, index) => (
+          <Grid key={index} size={{ xs: 12, sm: 6, lg: 3 }}>
+            <StatCard2
+              {...card}
+              inactiveDays={inactiveDays}
+              setInactiveDays={setInactiveDays}
+            />
           </Grid>
         ))}
         <Grid size={{ xs: 12, md: 6 }}>
@@ -135,9 +176,9 @@ export default function MainGrid({ currAppId }) {
         </Grid>
         <Grid size={{ xs: 12, lg: 3 }}>
           <Stack gap={2} direction={{ xs: "column", sm: "row", lg: "column" }}>
-            <CustomizedTreeView />
+            {/* <CustomizedTreeView /> */}
             {/* COUNTRY DISTRIBUTION */}
-            <ChartUserByCountry />
+            <ChartUserByCountry userGeoData={userGeoData} />
           </Stack>
         </Grid>
       </Grid>

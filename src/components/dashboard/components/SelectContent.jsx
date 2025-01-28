@@ -58,6 +58,11 @@ export default function SelectContent({ setCurrAppId }) {
     try {
       const response = await usersService.getApplicationsByDeveloper();
       setApplications(response); // Assuming response.data is an array of applications
+      // Set the first app as the default selected one
+      if (response.length > 0) {
+        setCompany(response[0].appid);
+        setCurrAppId(response[0].appid);
+      }
     } catch (error) {
       console.error("Error fetching applications:", error);
     }
@@ -68,6 +73,7 @@ export default function SelectContent({ setCurrAppId }) {
       openAddProductDialog();
     } else {
       const selectedAppId = event.target.value;
+      console.log("@ " + selectedAppId);
       setCompany(selectedAppId);
       setCurrAppId(selectedAppId);
     }

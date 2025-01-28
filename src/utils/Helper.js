@@ -143,3 +143,39 @@ export const getLast3MonthsDailyLogins = (logs) => {
 
   return { month1Data, month2Data, month3Data, days };
 };
+
+export function countInactiveUsers(users, days) {
+  if (!Array.isArray(users) || users.length === 0) return -1;
+
+  const currentDate = new Date();
+  const thresholdDate = new Date();
+  thresholdDate.setDate(currentDate.getDate() - days);
+
+  // Normalize thresholdDate to remove time
+  thresholdDate.setHours(0, 0, 0, 0);
+
+  return users.filter((user) => {
+    if (!user.lastseen) return false; // Skip users with no lastSeen data
+
+    const lastSeenDate = new Date(user.lastseen);
+
+    // If lastSeenDate is invalid, log and skip
+    if (isNaN(lastSeenDate)) {
+      debugLog("Invalid lastSeen date:", user.lastseen);
+      return false;
+    }
+
+    // Normalize lastSeenDate to remove time
+    lastSeenDate.setHours(0, 0, 0, 0);
+
+    debugLog("lastSeenDate", lastSeenDate);
+    debugLog("thresholdDate", thresholdDate);
+
+    return lastSeenDate < thresholdDate;
+  }).length;
+}
+
+export function debugLog(message, data = null) {
+  const stack = new Error().stack.split("\n")[2].trim(); // Get caller info
+  console.log(`[${stack}] ${message}`, data);
+}
