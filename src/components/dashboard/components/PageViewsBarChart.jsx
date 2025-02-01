@@ -40,7 +40,6 @@ export default function PageViewsBarChart({
             <Typography variant="h4" component="p">
               {`${totalViews}`}
             </Typography>
-            <Chip size="small" color="error" label="-8%" />
           </Stack>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
             Page views and downloads for the last 6 months
