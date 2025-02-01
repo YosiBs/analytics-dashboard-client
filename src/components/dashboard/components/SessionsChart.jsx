@@ -24,28 +24,13 @@ AreaGradient.propTypes = {
   id: PropTypes.string.isRequired,
 };
 
-// function getDaysInMonth(month, year) {
-//   const date = new Date(year, month, 0);
-//   const monthName = date.toLocaleDateString("en-US", {
-//     month: "short",
-//   });
-//   const daysInMonth = date.getDate();
-//   const days = [];
-//   let i = 1;
-//   while (days.length < daysInMonth) {
-//     days.push(`${monthName} ${i}`);
-//     i += 1;
-//   }
-//   return days;
-// }
-
 export default function SessionsChart({ dailyLoginlogs }) {
   const theme = useTheme();
   //const data = getDaysInMonth(4, 2024);
 
   // Get last 3 months logs grouped by month
   const { month1Data, month2Data, month3Data, days } =
-    Helper.getLast3MonthsDailyLogins(dailyLoginlogs);
+    Helper.getLast3MonthsDailyLogins2(dailyLoginlogs);
 
   const colorPalette = [
     theme.palette.primary.light,
@@ -61,7 +46,7 @@ export default function SessionsChart({ dailyLoginlogs }) {
     <Card variant="outlined" sx={{ width: "100%" }}>
       <CardContent>
         <Typography component="h2" variant="subtitle2" gutterBottom>
-          Sessions
+          Daily Activity
         </Typography>
         <Stack sx={{ justifyContent: "space-between" }}>
           <Stack
@@ -78,7 +63,7 @@ export default function SessionsChart({ dailyLoginlogs }) {
             <Chip size="small" color="success" label="+35%" />
           </Stack>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            Active Users per day in the last 30 days
+            Active Users per day in the last 3 months
           </Typography>
         </Stack>
         <LineChart
@@ -86,39 +71,39 @@ export default function SessionsChart({ dailyLoginlogs }) {
           xAxis={[
             {
               scaleType: "point",
-              data: days,
+              data: days.map((day) => `${day}`), // Convert days to string for labels
               tickInterval: (index, i) => (i + 1) % 5 === 0,
             },
           ]}
           series={[
             {
-              id: "month1",
+              id: "organic",
               label: "Current Month",
               showMark: false,
               curve: "linear",
               stack: "total",
               area: true,
               stackOrder: "ascending",
-              data: month1Data,
+              data: month1Data.slice(0, days.length), // ✅ Trim data to match days length
             },
             {
-              id: "month2",
+              id: "referral",
               label: "Last Month",
               showMark: false,
               curve: "linear",
               stack: "total",
               area: true,
               stackOrder: "ascending",
-              data: month2Data,
+              data: month2Data.slice(0, days.length), // ✅ Trim data to match days length
             },
             {
-              id: "month3",
+              id: "direct",
               label: "Two Months Ago",
               showMark: false,
               curve: "linear",
               stack: "total",
               stackOrder: "ascending",
-              data: month3Data,
+              data: month3Data.slice(0, days.length), // ✅ Trim data to match days length
               area: true,
             },
           ]}
@@ -142,9 +127,9 @@ export default function SessionsChart({ dailyLoginlogs }) {
             },
           }}
         >
-          <AreaGradient color={theme.palette.primary.dark} id="month1" />
-          <AreaGradient color={theme.palette.primary.main} id="month2" />
-          <AreaGradient color={theme.palette.primary.light} id="month3" />
+          <AreaGradient color={theme.palette.primary.dark} id="organic" />
+          <AreaGradient color={theme.palette.primary.main} id="referral" />
+          <AreaGradient color={theme.palette.primary.light} id="direct" />
         </LineChart>
       </CardContent>
     </Card>

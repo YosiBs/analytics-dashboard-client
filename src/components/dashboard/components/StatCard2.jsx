@@ -7,7 +7,6 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
-import * as Helper from "../../../utils/Helper";
 
 function StatCard2({
   title,
@@ -15,18 +14,23 @@ function StatCard2({
   showDaysInput = false,
   inactiveDays,
   setInactiveDays,
+  totalUsers,
 }) {
   const theme = useTheme();
-  const [displayValue, setDisplayValue] = React.useState(value);
 
   const handleChange = (event) => {
-    const newValue = parseInt(event.target.value, 10);
-    if (!isNaN(newValue) && newValue > 0) {
-      setInactiveDays((prev) => {
-        return newValue;
-      });
-      setDisplayValue(value); // Keeps the existing value logic
+    let newValue = parseInt(event.target.value, 10);
+    if (!isNaN(newValue) && newValue > 0 && newValue !== inactiveDays) {
+      setInactiveDays(newValue);
     }
+  };
+
+  const handleIncrement = () => {
+    setInactiveDays((prev) => Math.max(prev + 5, 5)); // Increase by 5, min 5
+  };
+
+  const handleDecrement = () => {
+    setInactiveDays((prev) => Math.max(prev - 5, 5)); // Decrease by 5, min 5
   };
 
   return (
@@ -40,20 +44,28 @@ function StatCard2({
             {title}
           </Typography>
           {showDaysInput && (
-            <TextField
-              type="number"
-              size="small"
-              variant="outlined"
-              value={inactiveDays}
-              onChange={handleChange}
-              sx={{ width: 80 }}
-              inputProps={{ min: 1 }}
-            />
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                type="number"
+                size="small"
+                variant="outlined"
+                value={inactiveDays}
+                onChange={handleChange}
+                sx={{ width: 62 }}
+                inputProps={{ min: 5, step: 5 }} // Ensure increments of 5
+              />
+              <Box
+                sx={{ display: "flex", justifyContent: "right", flexGrow: 1 }}
+              >
+                <Typography>Days</Typography>
+              </Box>
+            </Stack>
           )}
         </Stack>
+
         <Box sx={{ display: "flex", justifyContent: "center", flexGrow: 1 }}>
           <Typography variant="h4" component="p">
-            {displayValue}
+            {`${totalUsers}/${value}`}
           </Typography>
         </Box>
       </CardContent>
@@ -64,7 +76,10 @@ function StatCard2({
 StatCard2.propTypes = {
   title: PropTypes.string.isRequired,
   value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  showDaysInput: PropTypes.bool, // Optional prop to toggle the input field
+  showDaysInput: PropTypes.bool,
+  inactiveDays: PropTypes.number.isRequired,
+  setInactiveDays: PropTypes.func.isRequired,
+  totalUsers: PropTypes.number.isRequired,
 };
 
 export default StatCard2;

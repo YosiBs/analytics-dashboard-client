@@ -153,3 +153,60 @@ export const addNewApplication = async (appData) => {
     throw error;
   }
 };
+
+export const getRatingsByAppId = async (appId) => {
+  console.log(`Fetching ratings for App ID: ${appId}`);
+
+  const url = `http://localhost:5000/api/app-ratings/applications/${appId}`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    console.log("Ratings fetched successfully:", response.data);
+    return response.data; // Return the fetched data
+  } catch (error) {
+    if (error.response) {
+      // Server responded with a status code outside 2xx range
+      console.error("Error response:", error.response.data);
+    } else if (error.request) {
+      // No response received
+      console.error("Error request:", error.request);
+    } else {
+      // Axios setup issue
+      console.error("Error message:", error.message);
+    }
+    throw error; // Rethrow the error for the caller to handle
+  }
+};
+
+export const getLogsByAppIdAndTypeAndMonth = async (appId, logType, month) => {
+  console.log(
+    `Fetching logs for App ID: ${appId}, Log Type: ${logType}, Month: ${month}`
+  );
+
+  const url = `http://localhost:5000/api/logs/applications/${appId}/logType/${logType}/month/${month}`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    console.log(`Logs fetched successfully for month ${month}:`, response.data);
+    return response.data; // Return the fetched logs
+  } catch (error) {
+    if (error.response) {
+      console.error(`Error response for month ${month}:`, error.response.data);
+    } else if (error.request) {
+      console.error(`Error request for month ${month}:`, error.request);
+    } else {
+      console.error(`Error message for month ${month}:`, error.message);
+    }
+    throw error;
+  }
+};

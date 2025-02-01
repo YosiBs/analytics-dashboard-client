@@ -12,6 +12,7 @@ import PageViewsBarChart from "./PageViewsBarChart";
 import SessionsChart from "./SessionsChart";
 import StatCard from "./StatCard";
 import StatCard2 from "./StatCard2";
+import RatingCard from "./RatingCard";
 import * as usersService from "../../../services/usersService";
 import * as Helper from "../../../utils/Helper";
 import * as localStorageHelper from "../../../utils/localStorageHelper";
@@ -19,10 +20,15 @@ import * as localStorageHelper from "../../../utils/localStorageHelper";
 export default function MainGrid({ currAppId }) {
   const [data, setData] = React.useState([]);
   const [data2, setData2] = React.useState([]);
+  const [ratingData, setRatingData] = React.useState({
+    averageRating: 0,
+    totalRaters: 0,
+    ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+  });
   const [logs, setLogs] = React.useState([]);
   const [dailyLoginlogs, setDailyLogin] = React.useState([]);
   const [userGeoData, setUserGeoData] = React.useState([]);
-  const [inactiveDays, setInactiveDays] = React.useState(0);
+  const [inactiveDays, setInactiveDays] = React.useState(1);
 
   const fetchData = React.useCallback(async () => {
     if (!currAppId) return;
@@ -45,33 +51,18 @@ export default function MainGrid({ currAppId }) {
           title: "Users",
           value: String(users.length) || 0,
           interval: "Last 30 days",
-          trend: Helper.calculateTrend(
-            Helper.getLogsJoinedInLast30Days(crashes)
-          ),
+          trend: "up",
           data: Helper.getUsersJoinedInLast30Days(users), // Replace with actual user-related data
         },
         {
           title: "Crashes",
           value: String(crashes.length) || -1,
           interval: "Last 30 days",
-          trend:
-            Helper.calculateTrend(Helper.getLogsJoinedInLast30Days(crashes)) ==
-            "up"
-              ? "down"
-              : "up",
+          trend: "down",
           data: Helper.getLogsJoinedInLast30Days(crashes) || [], // Replace with actual crash data
         },
       ];
-      const temp = Helper.countInactiveUsers(users, inactiveDays);
-      Helper.debugLog("temp", temp);
-      const cards2 = [
-        {
-          title: "Inactive Users",
-          value: temp || 0,
-          showDaysInput: true,
-        },
-      ];
-      setData2(cards2);
+
       setData(cards); // Update the `data` state with the cards
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -82,6 +73,45 @@ export default function MainGrid({ currAppId }) {
   React.useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Separate effect for inactive users
+  React.useEffect(() => {
+    if (!currAppId) return;
+    const fetchInactiveUsers = async () => {
+      try {
+        const users = await usersService.getUsersByAppId(currAppId);
+        setData2([
+          {
+            title: "Total / Inactive Users",
+            value:
+              users.length - Helper.countInactiveUsers(users, inactiveDays) ||
+              0,
+            showDaysInput: true,
+            totalUsers: users.length,
+          },
+        ]);
+      } catch (error) {
+        console.error("Error fetching inactive users:", error);
+      }
+    };
+    fetchInactiveUsers();
+  }, [currAppId, inactiveDays]); // ✅ Runs only when `inactiveDays` changes
+
+  React.useEffect(() => {
+    if (!currAppId) return;
+
+    const fetchRatings = async () => {
+      try {
+        const ratings = await Helper.processRatingsData(currAppId);
+        setRatingData(ratings);
+      } catch (error) {
+        console.error("Error fetching ratings:", error);
+      }
+    };
+
+    fetchRatings();
+  }, [currAppId]);
+
   //GET ALL LOGS------------------------------------------------------------------
   React.useEffect(() => {
     if (!currAppId) return;
@@ -104,7 +134,7 @@ export default function MainGrid({ currAppId }) {
       try {
         const fetchedLogs = await usersService.getLogsByAppIdAndType(
           currAppId,
-          "DailyLogin"
+          "UserLogin"
         );
         setDailyLogin(fetchedLogs);
       } catch (error) {
@@ -113,6 +143,7 @@ export default function MainGrid({ currAppId }) {
     };
     fetchDailyLoginLogs();
   }, [currAppId]);
+
   //GET COUNTRIES USERS COUNT------------------------------------------------------------------
   React.useEffect(() => {
     if (!currAppId) return;
@@ -131,6 +162,41 @@ export default function MainGrid({ currAppId }) {
 
     fetchCountriesData();
   }, [currAppId]);
+
+  const [logsDataA, setLogsDataA] = React.useState([]);
+  const [logsDataB, setLogsDataB] = React.useState([]);
+  const [logsDataC, setLogsDataC] = React.useState([]);
+  const [totalViews, setTotalViews] = React.useState(0);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      const dataA = await Helper.getLast7MonthsLogCounts(
+        currAppId,
+        "PageViewed",
+        "MainActivity"
+      );
+      setLogsDataA(dataA);
+      const dataB = await Helper.getLast7MonthsLogCounts(
+        currAppId,
+        "PageViewed",
+        "GameActivity"
+      );
+      setLogsDataB(dataB);
+      const dataC = await Helper.getLast7MonthsLogCounts(
+        currAppId,
+        "PageViewed",
+        "SettingsActivity"
+      );
+      setLogsDataC(dataC);
+      const temp = await usersService.getLogsByAppIdAndType(
+        currAppId,
+        "PageViewed"
+      );
+      setTotalViews(temp.length);
+    }
+    fetchData();
+  }, [currAppId]);
+
   //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   return (
     <Box sx={{ width: "100%", maxWidth: { sm: "100%", md: "1700px" } }}>
@@ -158,12 +224,25 @@ export default function MainGrid({ currAppId }) {
             />
           </Grid>
         ))}
+        {ratingData && (
+          <RatingCard
+            title="User Ratings"
+            averageRating={Number(ratingData.averageRating)}
+            totalRaters={Number(ratingData.totalRaters)}
+            ratingBreakdown={ratingData.ratingBreakdown}
+          />
+        )}
         <Grid size={{ xs: 12, md: 6 }}>
           {/* SESSION CHART */}
           <SessionsChart dailyLoginlogs={dailyLoginlogs} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <PageViewsBarChart />
+          <PageViewsBarChart
+            logsDataA={logsDataA}
+            logsDataB={logsDataB}
+            logsDataC={logsDataC}
+            totalViews={totalViews}
+          />
         </Grid>
       </Grid>
       <Typography component="h2" variant="h6" sx={{ mb: 2 }}>

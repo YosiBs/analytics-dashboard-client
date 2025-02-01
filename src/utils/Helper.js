@@ -1,4 +1,5 @@
 import axios from "axios";
+import * as usersService from "../services/usersService";
 //===========================================================================================
 export const getUsersJoinedInLast30Days = (users) => {
   const now = new Date(); // Get current date & time
@@ -144,8 +145,52 @@ export const getLast3MonthsDailyLogins = (logs) => {
   return { month1Data, month2Data, month3Data, days };
 };
 
+export function getLast3MonthsDailyLogins2(dailyLoginlogs) {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const twoMonthsAgo = lastMonth === 0 ? 11 : lastMonth - 1;
+  const currentYear = now.getFullYear();
+  const lastMonthYear = lastMonth === 11 ? currentYear - 1 : currentYear;
+  const twoMonthsAgoYear = twoMonthsAgo === 11 ? currentYear - 1 : currentYear;
+
+  // Helper function to get the correct number of days
+  function getDaysArray(month, year) {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  }
+
+  // Get days array based on the **current month**
+  const days = getDaysArray(currentMonth, currentYear);
+
+  // Helper function to group logs by day (ensuring the array length matches)
+  function groupByDay(month, year) {
+    const daysCount = days.length; // Ensure data matches days array length
+    const grouped = new Array(daysCount).fill(0);
+
+    dailyLoginlogs.forEach((log) => {
+      const logDate = new Date(log.timestamp);
+      if (logDate.getMonth() === month && logDate.getFullYear() === year) {
+        const day = logDate.getDate() - 1; // Adjust for 0-based index
+        if (day < daysCount) {
+          grouped[day] += 1; // Count logins for that day
+        }
+      }
+    });
+
+    return grouped;
+  }
+
+  // Get data for each of the last 3 months
+  const month1Data = groupByDay(currentMonth, currentYear);
+  const month2Data = groupByDay(lastMonth, lastMonthYear);
+  const month3Data = groupByDay(twoMonthsAgo, twoMonthsAgoYear);
+
+  return { month1Data, month2Data, month3Data, days };
+}
+
 export function countInactiveUsers(users, days) {
-  if (!Array.isArray(users) || users.length === 0) return -1;
+  if (!Array.isArray(users) || users.length === 0) return 0;
 
   const currentDate = new Date();
   const thresholdDate = new Date();
@@ -161,15 +206,11 @@ export function countInactiveUsers(users, days) {
 
     // If lastSeenDate is invalid, log and skip
     if (isNaN(lastSeenDate)) {
-      debugLog("Invalid lastSeen date:", user.lastseen);
       return false;
     }
 
     // Normalize lastSeenDate to remove time
     lastSeenDate.setHours(0, 0, 0, 0);
-
-    debugLog("lastSeenDate", lastSeenDate);
-    debugLog("thresholdDate", thresholdDate);
 
     return lastSeenDate < thresholdDate;
   }).length;
@@ -178,4 +219,121 @@ export function countInactiveUsers(users, days) {
 export function debugLog(message, data = null) {
   const stack = new Error().stack.split("\n")[2].trim(); // Get caller info
   console.log(`[${stack}] ${message}`, data);
+}
+
+export async function processRatingsData(appId) {
+  try {
+    const ratings = await usersService.getRatingsByAppId(appId);
+
+    if (!Array.isArray(ratings) || ratings.length === 0) {
+      return {
+        averageRating: 0,
+        totalRaters: 0,
+        ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        ratings: [],
+      };
+    }
+
+    // Process ratings
+    const totalRaters = ratings.length;
+    const sumRatings = ratings.reduce((acc, { rating }) => acc + rating, 0);
+    const averageRating =
+      totalRaters > 0 ? (sumRatings / totalRaters).toFixed(1) : 0;
+
+    // Generate rating breakdown
+    const ratingBreakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    ratings.forEach(({ rating }) => {
+      if (rating >= 1 && rating <= 5) {
+        ratingBreakdown[rating] += 1;
+      }
+    });
+
+    // Convert count to percentage
+    Object.keys(ratingBreakdown).forEach((key) => {
+      ratingBreakdown[key] =
+        totalRaters > 0
+          ? ((ratingBreakdown[key] / totalRaters) * 100).toFixed(1)
+          : 0;
+    });
+
+    return {
+      averageRating,
+      totalRaters,
+      ratingBreakdown,
+      ratings, // Return raw ratings if needed (for comments, timestamps, etc.)
+    };
+  } catch (error) {
+    console.error("Error processing ratings:", error);
+    return {
+      averageRating: 0,
+      totalRaters: 0,
+      ratingBreakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      ratings: [],
+    };
+  }
+}
+
+export function getLast7Months() {
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const currentMonth = new Date().getMonth(); // 0-based index (0 = Jan, 11 = Dec)
+  const last7Months = [];
+
+  for (let i = 6; i >= 0; i--) {
+    const monthIndex = (currentMonth - i + 12) % 12; // Handle wrap-around for previous year
+    last7Months.push(monthNames[monthIndex]);
+  }
+
+  return last7Months;
+}
+
+export async function getLast7MonthsLogCounts(appId, logType, description) {
+  const months = getLast7Months(); // Get last 7 months as ["Jan", "Feb", ...]
+  const currentYear = new Date().getFullYear();
+
+  // Convert month names to numbers (1-12)
+  const monthNumbers = months.map((monthName) => {
+    const date = new Date(Date.parse(monthName + " 1, " + currentYear));
+    return date.getMonth() + 1; // Get 1-based month number
+  });
+
+  // Fetch logs for each month and count matching logs
+  const logCounts = await Promise.all(
+    monthNumbers.map(async (month) => {
+      try {
+        const logs = await usersService.getLogsByAppIdAndTypeAndMonth(
+          appId,
+          logType,
+          month
+        );
+
+        console.log(`Logs for ${month}:`, logs);
+
+        // Filter logs where logType matches and description matches
+        const filteredLogs = logs.filter(
+          (log) => log.logtype === logType && log.description === description
+        );
+
+        return filteredLogs.length; // Return count of matching logs
+      } catch (error) {
+        console.error(`Error fetching logs for month ${month}:`, error);
+        return 0; // Return 0 if there's an error
+      }
+    })
+  );
+
+  return logCounts; // Returns an array of 7 numbers
 }
